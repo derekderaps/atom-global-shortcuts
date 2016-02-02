@@ -1,0 +1,14 @@
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'Global Shortcuts'
+      'submenu': [
+        {
+          'label': 'Show/Hide Atom Window'
+          'command': 'global-shortcuts:show-atom-window'
+        }
+      ]
+    ]
+  }
+]

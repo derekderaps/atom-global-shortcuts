@@ -3,8 +3,23 @@ _ = require 'underscore-plus'
 module.exports =
 class Shortcuts
 
-  constructor: (@globalShortcut) ->
+  # Tell Atom we want to support serialization of this class.
+  atom.deserializers.add(this)
+
+  # Re-registers all our serialized commands.
+  @deserialize: ({data}) ->
+    new Shortcuts data.globalShortcut data.registered
+
+  # Optionally accepts a parameter of shortcuts to register immediately.
+  constructor: (@globalShortcut, shortcuts) ->
     @registered = []
+    @registerCommand shortcut.keystrokes, shortcut.commandName, true for shortcut in shortcuts if shortcuts
+
+  # Serializes the array of "registered" shortcuts.
+  serialize: ->
+    deserializer: 'Shortcuts',
+    data:
+      registered: @registered
 
   isRegistered: (keystrokes) =>
     try
@@ -12,7 +27,7 @@ class Shortcuts
     catch
       null #aka don't know
 
-  registerCommand: (keystrokes, commandName) ->
+  registerCommand: (keystrokes, commandName, preventNotify) ->
     accelerator = @accelerator(keystrokes)
     didRegister =
       try
@@ -26,13 +41,14 @@ class Shortcuts
         commandName: commandName
         keystrokes: keystrokes
       )
+      # Only notify the user when shortcut registered manually. I.e., don't
+      # notify about shortcuts re-registered on startup.
       atom.notifications.addSuccess "global-shortcuts: Registered command!", {
         detail: "#{_.humanizeKeystroke(keystrokes)} will trigger #{commandName}!"
-      }
+      } if (!preventNotify)
     else
       console.warn "global-shortcuts: Could not register #{accelerator} as global shortcut (keystrokes: #{keystrokes})"
-
-    return didRegister
+    didRegister
 
   unregister: (item) ->
     @registered.splice(@registered.indexOf(item), 1)
